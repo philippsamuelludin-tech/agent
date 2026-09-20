@@ -4,7 +4,7 @@ import argparse
 from dotenv import load_dotenv
 from openai import OpenAI  # type: ignore[reportMissingImports]
 from prompts import system_prompt
-from functions.call_functions import available_functions
+from call_functions import available_functions
 
 load_dotenv()
 api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -30,6 +30,9 @@ response = client.chat.completions.create(
     temperature=0,
     tools=available_functions,
 )
+
+if not response.usage:
+    raise RuntimeError("API response appears to be malformed")
 
 prompt_tokens = response.usage.prompt_tokens
 response_tokens = response.usage.completion_tokens
