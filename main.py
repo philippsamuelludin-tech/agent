@@ -23,27 +23,35 @@ messages = [
     {"role": "user", "content": args.user_prompt},
 ]
 
-response = client.chat.completions.create(
-    model="openrouter/free",
-    messages=messages,
-    temperature=0,
-    tools=available_functions,
-)
+for _ in range(15):
+    response = client.chat.completions.create(
+        model="openrouter/free",
+        messages=messages,
+        temperature=0,
+        tools=available_functions,
+    )
 
-if not response.usage:
-    raise RuntimeError("API response appears to be malformed")
+    if not response.usage:
+        raise RuntimeError("API response appears to be malformed")
 
-prompt_tokens = response.usage.prompt_tokens
-response_tokens = response.usage.completion_tokens
+    prompt_tokens = response.usage.prompt_tokens
+    response_tokens = response.usage.completion_tokens
 
-message = response.choices[0].message
+    message = response.choices[0].message
+    messages.append(message)
 
-for tool_call in message.tool_calls:
-    result_message = call_function(tool_call, verbose=args.verbose)
-    if not result_message["content"]:
-        raise RuntimeError("Function call returned empty content")
-    if args.verbose:
-        print(f"-> {result_message['content']}")
+    if not message.tool_calls:
+        break
+
+    for tool_call in message.tool_calls:
+        result_message = call_function(tool_call, verbose=args.verbose)
+        if not result_message["content"]:
+            raise RuntimeError("Function call returned empty content")
+        if args.verbose:
+            print(f"-> {result_message['content']}")
+        messages.append(result_message)
+
+    
 
 if args.verbose:
     print(f"User prompt: {args.user_prompt}")
